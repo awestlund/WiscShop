@@ -59,11 +59,6 @@ Users cannot query `/users`, since that would involve exposing all the other use
 - `password`
 - `firstName`
 - `lastName`
-- `goalDailyCalories`      // Not needed
-- `goalDailyProtein`       // Not needed
-- `goalDailyCarbohydrates` // Not needed
-- `goalDailyFat`           // Not needed
-- `goalDailyActivity`      // Not needed
 
 Additionally, you can delete unused users using the `DELETE` method on the `/users/<user_id>` endpoint. As articulated in the Final Notes, please be a good citizen and clean up after yourself.
 
