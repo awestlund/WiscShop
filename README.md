@@ -36,11 +36,6 @@ So you want the user to sign up. This can be done with a `POST` request to the `
  password:<str>,                 // Required
  firstName:<str>,                // Optional
  lastName:<str>,                 // Optional
- goalDailyCalories:<float>,      // Optional
- goalDailyProtein:<float>,       // Optional
- goalDailyCarbohydrates:<float>, // Optional
- goalDailyFat:<float>,           // Optional
- goalDailyActivity:<float>       // Optional
 }
 ```
 
