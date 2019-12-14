@@ -38,6 +38,9 @@ app.post('/', express.json(), (req, res) => {
   //navigate to the cart
   async function navCart() {
     //navigating to your cart
+    //read in params
+    agent.parameters.entity
+    agent.query //-> post to messages
 
   }
 
