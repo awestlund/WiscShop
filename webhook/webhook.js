@@ -13,7 +13,8 @@ let tags = [];
 let products = [];
 
 // pass name of category
-async function fetchTags(name) {
+async function fetchTags() {
+  cat = agent.parameters.Categories;
   let request = {
     method: 'GET',
     headers: {
@@ -23,7 +24,7 @@ async function fetchTags(name) {
     redirect: 'follow'
   }
 
-  let response = await fetch('https://mysqlcs639.cs.wisc.edu/categories/' + name + '/tags', request);
+  let response = await fetch('https://mysqlcs639.cs.wisc.edu/categories/' + cat + '/tags', request);
   let result = await response.json();
 
   tags = result.tags;
@@ -67,56 +68,6 @@ async function fetchProducts() {
   products= result.products;
 }
 
-// needs catigory name as input
-async function fetchProductsTags(name) {
-  if (tags == null || tags.length === 0) {
-    let myHeaders = new Headers();
-    myHeaders.append("Content-Type", "application/json");
-    myHeaders.append("x-access-token", AsyncStorage.getItem("token"));
-
-    let requestOptions = {
-      method: "GET",
-      headers: myHeaders,
-      redirect: "follow"
-    };
-
-    let response = await fetch(
-      "https://mysqlcs639.cs.wisc.edu/products?category=" + name,
-      requestOptions
-    );
-    let result = await response.json();
-
-    await this.setState({ products: result.products });
-  }
-  else {
-    let myHeaders = new Headers();
-    myHeaders.append("Content-Type", "application/json");
-    myHeaders.append("x-access-token", AsyncStorage.getItem("token"));
-
-    let requestOptions = {
-      method: "GET",
-      headers: myHeaders,
-      redirect: "follow"
-    };
-
-    let tagsString = '';
-
-    for (let i = 0; i < tags.length; i++) {
-      if (i === tags.length - 1) {
-        tagsString += tags[i];
-      }
-      else {
-        tagsString += tags[i] + ',';
-      }
-    }
-
-    let response = await fetch('https://mysqlcs639.cs.wisc.edu/products?category=' + name + '&tags=' + tagsString, requestOptions);
-    let result = await response.json();
-
-    products = result.products;
-  }
-}
-
 async function getToken() {
   let request = {
     method: 'GET',
@@ -135,46 +86,46 @@ async function getToken() {
 }
 // current page is found in app.js
 
-  async function login() {
-    if (username != "" && password != "") {
+async function login() {
+  if (username != "" && password != "") {
 
-      var data = JSON.stringify({
-        "username": username,
-        "password": password
-      });
+    var data = JSON.stringify({
+      "username": username,
+      "password": password
+    });
 
-      var myHeaders = new Headers();
-      myHeaders.append("Accept", "application/json");
-      myHeaders.append("Content-Type", "application/json");
-      myHeaders.append("Authorization", 'Basic ' + base64.encode(username + ":" + password));
+    var myHeaders = new Headers();
+    myHeaders.append("Accept", "application/json");
+    myHeaders.append("Content-Type", "application/json");
+    myHeaders.append("Authorization", 'Basic ' + base64.encode(username + ":" + password));
 
-      var requestOptions = {
-        method: 'GET',
-        headers: myHeaders,
-        redirect: 'follow'
-      };
+    var requestOptions = {
+      method: 'GET',
+      headers: myHeaders,
+      redirect: 'follow'
+    };
 
-      let response = await fetch('https://mysqlcs639.cs.wisc.edu/login', requestOptions);
+    let response = await fetch('https://mysqlcs639.cs.wisc.edu/login', requestOptions);
 
-      let data2 = await response.json();
-      let data3 = await response.status;
-      if (data3 <= 200) {
-        loggedIn =  true;
-        token =  data2.token;
-        await AsyncStorage.setItem('token', data2.token);
-        await AsyncStorage.setItem('username', username);
-        //this.props.navigation.navigate('Profile');
-        return data2.token;
-      }
-      else {
-        //error
-        console.log("Cannot Login in with given info!!");
-        console.log("ErrorCode: " + data3);
-        console.log("Error: " + data2.message);
-        return null
-      }
+    let data2 = await response.json();
+    let data3 = await response.status;
+    if (data3 <= 200) {
+      loggedIn =  true;
+      token =  data2.token;
+      await AsyncStorage.setItem('token', data2.token);
+      await AsyncStorage.setItem('username', username);
+      //this.props.navigation.navigate('Profile');
+      return data2.token;
+    }
+    else {
+      //error
+      console.log("Cannot Login in with given info!!");
+      console.log("ErrorCode: " + data3);
+      console.log("Error: " + data2.message);
+      return null
     }
   }
+}
 
   async function fetchMessages() {
     while(true) {
@@ -233,86 +184,6 @@ async function getToken() {
     return messages;
   }
 
-  async function routeFromServer() {
-    while(this.state.shouldUpdate) {
-      try {
-        var myHeaders = new Headers();
-        myHeaders.append("Content-Type", "application/json");
-        myHeaders.append("x-access-token", token);
-
-        var requestOptions = {
-          method: 'GET',
-          headers: myHeaders,
-          redirect: 'follow'
-        };
-
-        let response = await fetch('https://mysqlcs639.cs.wisc.edu/application', requestOptions);
-        if(!response.ok) {
-          throw new Error()
-        }
-        let result = await response.json();
-
-        let base = window.location.protocol+"//"+window.location.host;
-        let serverRoute = window.location.href.replace(base,"");
-
-        if(serverRoute !== result.page) {
-          if(result.dialogflowUpdated) { // update app route
-            window.location.href = base + result.page;
-            this.setState({serverRoute:result.page});
-
-            let body = JSON.stringify({dialogflowUpdated: false});
-
-            requestOptions = {
-              method: 'PUT',
-              headers: myHeaders,
-              body: body,
-              redirect: 'follow'
-            }
-
-            await fetch('https://mysqlcs639.cs.wisc.edu/application', requestOptions);
-          }
-          else { // update server route
-            let body = JSON.stringify({page: serverRoute, dialogflowUpdated: false});
-            this.setState({serverRoute:serverRoute});
-            requestOptions = {
-              method: 'PUT',
-              headers: myHeaders,
-              body: body,
-              redirect: 'follow'
-            }
-
-            await fetch('https://mysqlcs639.cs.wisc.edu/application', requestOptions);
-          }
-        }
-        else { // check for back (from server)
-          if(result.back) {
-            window.history.back();
-
-            let base = window.location.protocol+"//"+window.location.host;
-            let serverRoute = window.location.href.replace(base,"");
-            this.setState({serverRoute:serverRoute});
-
-            let body = JSON.stringify({page: serverRoute, dialogflowUpdated: false, back: false});
-
-            requestOptions = {
-              method: 'PUT',
-              headers: myHeaders,
-              body: body,
-              redirect: 'follow'
-            }
-
-            await fetch('https://mysqlcs639.cs.wisc.edu/application', requestOptions);
-          }
-        }
-
-  
-      }
-      catch(error) {
-        await this.getToken(AsyncStorage.getItem('username'), AsyncStorage.getItem('password'));
-      }
-    }
-  }
-
   app.get('/', (req, res) => res.send('online'))
   app.post('/', express.json(), (req, res) => {
   const agent = new WebhookClient({ request: req, response: res })
@@ -326,33 +197,8 @@ async function getToken() {
   //navigate to the cart
   async function navCart() {
     console.log("nav cart");
-    //navigating to your cart
-    //read in params
-    agent.parameters.entity
-    agent.query //-> post to messages
     agent.add('Navigating to your cart');
-
-  }
-
-  // navigate to a product poge
-  async function navProducts() {
-    console.log("Navigating to product");
-    agent.add('Navigating to the product');
-  }
-
-  //navigate to a category page
-  async function navPages() {
-    console.log("nav cat page");
-    //Navigating to new page...
-    agent.add('Navigating to the page');
-  }
-
-  //navigate to the Home page
-  async function navHome() {
-    console.log("Home");
-    console.log(username);
-    agent.add('Navigating to the home page');
-    let body = JSON.stringify({page: "/"+username, dialogflowUpdated: false, back: false});
+    let body = JSON.stringify({page: "/"+username+"/cart", dialogflowUpdated: true, back: false});
     let request = {
       method: 'PUT',
       headers: {
@@ -362,7 +208,109 @@ async function getToken() {
       body: body,
       redirect: 'follow'
     }
+    await fetch('https://mysqlcs639.cs.wisc.edu/application', request);
+  }
 
+  // navigate to a product poge
+  async function navProducts() {
+    console.log("Navigating to product");
+    agent.add('Navigating to the product');
+    cat = agent.parameters.Categories;
+    //TODO get product id
+    let body = JSON.stringify({page: "/"+products+"/"+"<product_id>", dialogflowUpdated: true, back: false});
+    let request = {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-access-token': token
+      },
+      body: body,
+      redirect: 'follow'
+    }
+    await fetch('https://mysqlcs639.cs.wisc.edu/application', request);
+  }
+  async function deleteTagFunction(){
+    tag = agent.parameters.Tags;
+    agent.context.delete('Tags');
+    console.log("filtering product by "+tag);
+    agent.add("filtering product by "+tag);
+    let request = {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-access-token': token
+      },
+      redirect: 'follow'
+    }
+    await fetch('https://mysqlcs639.cs.wisc.edu/application/tags/'+tag, request);
+  }
+
+  async function deleteTag(){
+    tag = agent.parameters.Tags;
+    agent.add("deleting "+tag+" filter");
+    deleteTagFunction();
+  }
+
+  async function filterBy(){
+    cat = agent.context.get('Categories') || {parameters:{}};
+    tag = agent.parameters.Tags;
+    agent.add("filtering product by "+tag);
+    agent.context.set({'name':'Tags',
+                       'lifespan':2,
+                       'parameters':tag})
+    console.log("filtering product by "+tag);
+    let request = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-access-token': token
+      },
+      redirect: 'follow'
+    }
+    await fetch('https://mysqlcs639.cs.wisc.edu/application/tags/'+tag, request);
+  }
+
+  //navigate to a category page
+  async function navPages() {
+    cat = agent.parameters.Categories;
+    console.log("nav "+cat+" page");
+    console.log("/"+username+"/"+cat+token)
+    //Navigating to new page...
+    agent.add("Navigating to the "+cat+" page");
+    agent.context.set({'name':'Categories',
+                       'lifespan':5,
+                       'parameters':cat})
+    let body = JSON.stringify({page: "/"+username+"/"+cat, dialogflowUpdated: true, back: false});
+    let request = {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-access-token': token
+      },
+      body: body,
+      redirect: 'follow'
+    }
+    await fetch('https://mysqlcs639.cs.wisc.edu/application', request);
+    console.log("done");
+  }
+
+  //navigate to the Home page
+  async function navHome() {
+    console.log("Home");
+    console.log(username);
+    console.log(token);
+    agent.add('Navigating to the home page');
+    agent.clearContext;
+    let body = JSON.stringify({page: "/"+username, dialogflowUpdated: true, back: false});
+    let request = {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-access-token': token
+      },
+      body: body,
+      redirect: 'follow'
+    }
     await fetch('https://mysqlcs639.cs.wisc.edu/application', request);
 
   }
@@ -371,7 +319,7 @@ async function getToken() {
   async function back() {
     console.log("back");
     agent.add('Navigating back a page');
-    let body = JSON.stringify({page: "", dialogflowUpdated: false, back: true});
+    let body = JSON.stringify({page: "", dialogflowUpdated: true, back: true});
     let request = {
       method: 'PUT',
       headers: {
@@ -383,13 +331,21 @@ async function getToken() {
     }
 
     await fetch('https://mysqlcs639.cs.wisc.edu/application', request);
-    //navigating back
   }
 
   //logout the user
   async function logout() {
     console.log("logout");
     //Logging you out.
+    let request = {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-access-token': token
+      },
+      redirect: 'follow'
+    }
+    await fetch('https://mysqlcs639.cs.wisc.edu/application/products', request);
 
   }
 
@@ -397,7 +353,7 @@ async function getToken() {
   async function tags() {
     console.log("tags");
     //listing the tags
-    category = agent.context.categories();
+    category = agent.parameters.categories();
     options = await fetchTags(category);
     agent.add('Your tag options are as follows:');
     console.log(options);
@@ -410,8 +366,18 @@ async function getToken() {
   async function reviewCart() {
     console.log("review cart");
     agent.consoleMessages();
-    agent.add("Here's a review of your cart: " );
-    //Here's a review of your cart:
+    agent.add("Here's a review of your cart" );
+    let body = JSON.stringify({page: "/"+username+"/cart-review", dialogflowUpdated: true, back: false});
+    let request = {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-access-token': token
+      },
+      body: body,
+      redirect: 'follow'
+    }
+    await fetch('https://mysqlcs639.cs.wisc.edu/application', request);
 
   }
 
@@ -419,6 +385,7 @@ async function getToken() {
   async function prodRev() {
     console.log("product reviews");
     //Here are the reviews:
+    ///products/<product_id>/reviews
 
   }
 
@@ -432,7 +399,19 @@ async function getToken() {
   //list out items in the cart and the cart total $$$
   async function cartContent() {
     console.log("cart contents");
-    //Listing cart items
+    //ask for product details like quantity
+    agent.add('Here are the items in your cart');
+    //TODO get product id
+
+    let request = {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-access-token': token
+      },
+      redirect: 'follow'
+    }
+    await fetch('https://mysqlcs639.cs.wisc.edu/application/products', request);
   }
 
   //confirm user order
@@ -440,19 +419,59 @@ async function getToken() {
     //cart content
     //cart confirm
     console.log("cart confirm");
-    //Placing your order!
+    agent.add('Cart Ordered');
+    let body = JSON.stringify({page: "/"+username+"/cart-confirmed", dialogflowUpdated: true, back: false});
+    let request = {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-access-token': token
+      },
+      body: body,
+      redirect: 'follow'
+    }
+    await fetch('https://mysqlcs639.cs.wisc.edu/application', request);
   }
 
   //delete an item from the cart
   async function cartDelete() {
     console.log("cart delete");
     //Deleting the item from your cart
+    console.log("Navigating to product");
+    agent.add('Navigating to the product');
+    cat = agent.parameters.Categories;
+    //TODO get product id
+    let body = JSON.stringify({page: "/"+products+"/"+prodID, dialogflowUpdated: true, back: false});
+    let request = {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-access-token': token
+      },
+      body: body,
+      redirect: 'follow'
+    }
+    await fetch('https://mysqlcs639.cs.wisc.edu/application', request);
   }
 
   //add item to the cart
   async function cartAdd() {
     console.log("cart add");
     //ask for product details like quantity
+    agent.add('Adding the product to the cart');
+    cat = agent.parameters.Categories;
+    //TODO get product id
+    let body = JSON.stringify({page: "/"+products+"/"+prodID, dialogflowUpdated: true, back: false});
+    let request = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-access-token': token
+      },
+      body: body,
+      redirect: 'follow'
+    }
+    await fetch('https://mysqlcs639.cs.wisc.edu/application', request);
   }
 
   //list out possible item catigories to choose from
@@ -467,22 +486,7 @@ async function getToken() {
       agent.add(i);
     }
 
-    //Here are the categories of products:
-
   }
-
-  // //get username
-  // async function username() {
-  //   console.log("get username");
-  //   //I entered your username.
-
-  // }
-
-  // //get passowrd
-  // async function password() {
-  //   console.log("get username");
-  //   //I entered the password.
-  // }
 
   //login the user
   async function login() {
@@ -521,6 +525,8 @@ async function getToken() {
   intentMap.set('Cart Delete', cartDelete)
   intentMap.set('Cart Add', cartAdd)
   intentMap.set('Categories', categories)
+  intentMap.set('Filter Tags', filterBy)
+  intentMap.set('Remove Tag', deleteTag)
   // intentMap.set('Username', username)
   // intentMap.set('Password', password)
 
