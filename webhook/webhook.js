@@ -198,17 +198,17 @@ async function login() {
   async function navCart() {
     console.log("nav cart");
     agent.add('Navigating to your cart');
-    let body = JSON.stringify({page: "/"+username+"/cart", dialogflowUpdated: true, back: false});
-    let request = {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-access-token': token
-      },
-      body: body,
-      redirect: 'follow'
-    }
-    await fetch('https://mysqlcs639.cs.wisc.edu/application', request);
+    // let body = JSON.stringify({page: "/"+username+"/cart", dialogflowUpdated: true, back: false});
+    // let request = {
+    //   method: 'PUT',
+    //   headers: {
+    //     'Content-Type': 'application/json',
+    //     'x-access-token': token
+    //   },
+    //   // body: body,
+    //   redirect: 'follow'
+    // }
+    // await fetch('https://mysqlcs639.cs.wisc.edu/application', request);
   }
 
   // navigate to a product poge
