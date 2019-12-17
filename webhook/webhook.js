@@ -42,7 +42,7 @@ async function fetchCategories() {
   }
 
   console.log("here1");
-  console.log("here: "+ token);
+  console.log("here: " + token);
 
   let response = await fetch('https://mysqlcs639.cs.wisc.edu/categories/', request);
   let result = await response.json();
@@ -65,7 +65,7 @@ async function fetchProducts() {
   let response = await fetch('https://mysqlcs639.cs.wisc.edu/products/', requestOptions);
   let result = await response.json();
 
-  products= result.products;
+  products = result.products;
 }
 
 async function getToken() {
@@ -84,113 +84,74 @@ async function getToken() {
   //await AsyncStorage.setItem('token', serverResponse.token);
   return token;
 }
-// current page is found in app.js
 
-async function login() {
-  if (username != "" && password != "") {
-
-    var data = JSON.stringify({
-      "username": username,
-      "password": password
-    });
-
-    var myHeaders = new Headers();
-    myHeaders.append("Accept", "application/json");
-    myHeaders.append("Content-Type", "application/json");
-    myHeaders.append("Authorization", 'Basic ' + base64.encode(username + ":" + password));
-
-    var requestOptions = {
-      method: 'GET',
-      headers: myHeaders,
-      redirect: 'follow'
-    };
-
-    let response = await fetch('https://mysqlcs639.cs.wisc.edu/login', requestOptions);
-
-    let data2 = await response.json();
-    let data3 = await response.status;
-    if (data3 <= 200) {
-      loggedIn =  true;
-      token =  data2.token;
-      await AsyncStorage.setItem('token', data2.token);
-      await AsyncStorage.setItem('username', username);
-      //this.props.navigation.navigate('Profile');
-      return data2.token;
-    }
-    else {
-      //error
-      console.log("Cannot Login in with given info!!");
-      console.log("ErrorCode: " + data3);
-      console.log("Error: " + data2.message);
-      return null
-    }
-  }
+async function clearMessages() {
+  let requestOptions = {
+    headers: {
+      'Content-Type': 'application/json',
+      'x-access-token': token
+    },
+    method: 'DELETE',
+    redirect: 'follow'
+  };
+  let response = await fetch('https://mysqlcs639.cs.wisc.edu/application/messages', requestOptions);
+  console.log("Status: "+ await response.status);
+  console.log("Status: "+ await response.message);
+  return response;
 }
 
-  async function fetchMessages() {
-    while(true) {
-      let myHeaders = new Headers();
-      myHeaders.append("Content-Type", "application/json");
-      myHeaders.append("x-access-token", token);
+async function postUserMessages(input) {
+  console.log(input);
+  let body = JSON.stringify({
+    "isUser": true,
+    "text": input
+  });
+  let requestOptions = {
+    headers: {
+      'Content-Type': 'application/json',
+      'x-access-token': token
+    },
+    method: 'POST',
+    body: body,
+    redirect: 'follow'
+  };
+  let response = await fetch('https://mysqlcs639.cs.wisc.edu/application/messages', requestOptions);
+  console.log("Status: "+ await response.status);
+  console.log("Status: "+ await response.message);
+  return response;
+}
 
-      let requestOptions = {
-        method: 'GET',
-        headers: myHeaders,
-        redirect: 'follow'
-      };
+async function postBotMessages(input) {
+  console.log(input);
+  let body = JSON.stringify({
+    "isUser": false,
+    "text": input
+  });
+  let requestOptions = {
+    headers: {
+      'Content-Type': 'application/json',
+      'x-access-token': token
+    },
+    body: body,
+    method: 'POST',
+    redirect: 'follow'
+  };
 
-      let response = await fetch('https://mysqlcs639.cs.wisc.edu/application/messages', requestOptions);
-      if(!response.ok) {
-  
-        continue;
-      }
-      let result = await response.json();
+  let response = await fetch('https://mysqlcs639.cs.wisc.edu/application/messages', requestOptions);
+  console.log("Status: "+ await response.status);
+  console.log("Status: "+ await response.message);
+  return response;
+}
 
-      if(this.state.messages.length !== result.messages.length) {
-        this.setState({messages: result.messages})
-        continue;
-      }
-
-      for(let i = 0; i < this.state.messages.length; i++) {
-        if(result.messages[i] !== this.state.messages[i]) {
-          await this.setState({messages: result.messages});
-          break;
-        }
-      }
-
-    }
-  }
-
-  function getMessages() {
-    let messages = [];
-
-    for(const message of this.state.messages) {
-      if(message.isUser) {
-        messages.push (
-          // <div key={message.id} style={{width: 200, backgroundColor: '#2d78cf', margin: 20, marginLeft: 75, borderRadius: 20, padding: 10}}>
-          //   {message.text}
-          // </div>
-        )
-      }
-      else {
-        messages.push (
-          // <div key={message.id} style={{width: 200, backgroundColor: '#b2c4d9', margin: 20, marginLeft: 10, borderRadius: 20, padding: 10}}>
-          //   {message.text}
-          // </div>
-        )
-      }
-    }
-
-    return messages;
-  }
-
-  app.get('/', (req, res) => res.send('online'))
-  app.post('/', express.json(), (req, res) => {
+app.get('/', (req, res) => res.send('online'))
+app.post('/', express.json(), (req, res) => {
   const agent = new WebhookClient({ request: req, response: res })
 
-  function welcome() {
+  async function welcome() {
     console.log("welcome");
     agent.add('Webhook works, please Login!');
+    await postUserMessages(agent.query);
+    await postBotMessages('Webhook works, please Login!');
 
   }
 
@@ -198,26 +159,9 @@ async function login() {
   async function navCart() {
     console.log("nav cart");
     agent.add('Navigating to your cart');
-    // let body = JSON.stringify({page: "/"+username+"/cart", dialogflowUpdated: true, back: false});
-    // let request = {
-    //   method: 'PUT',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     'x-access-token': token
-    //   },
-    //   // body: body,
-    //   redirect: 'follow'
-    // }
-    // await fetch('https://mysqlcs639.cs.wisc.edu/application', request);
-  }
-
-  // navigate to a product poge
-  async function navProducts() {
-    console.log("Navigating to product");
-    agent.add('Navigating to the product');
-    cat = agent.parameters.Categories;
-    //TODO get product id
-    let body = JSON.stringify({page: "/"+products+"/"+"<product_id>", dialogflowUpdated: true, back: false});
+    await postUserMessages(agent.query);
+    await postBotMessages('Navigating to your cart');
+    let body = JSON.stringify({ page: "/" + username + "/cart", dialogflowUpdated: true, back: false });
     let request = {
       method: 'PUT',
       headers: {
@@ -229,11 +173,31 @@ async function login() {
     }
     await fetch('https://mysqlcs639.cs.wisc.edu/application', request);
   }
-  async function deleteTagFunction(){
+
+  // navigate to a product poge
+  async function navProducts() {
+    console.log("Navigating to product");
+    agent.add('Navigating to the product');
+    await postUserMessages(agent.query);
+    await postBotMessages('Navigating to the product');
+    cat = agent.parameters.Categories;
+    //TODO get product id
+    let body = JSON.stringify({ page: "/" + products + "/" + "<product_id>", dialogflowUpdated: true, back: false });
+    let request = {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-access-token': token
+      },
+      body: body,
+      redirect: 'follow'
+    }
+    await fetch('https://mysqlcs639.cs.wisc.edu/application', request);
+  }
+  async function deleteTagFunction() {
     tag = agent.parameters.Tags;
     agent.context.delete('Tags');
-    console.log("filtering product by "+tag);
-    agent.add("filtering product by "+tag);
+    console.log("deleting filter " + tag);
     let request = {
       method: 'DELETE',
       headers: {
@@ -242,23 +206,29 @@ async function login() {
       },
       redirect: 'follow'
     }
-    await fetch('https://mysqlcs639.cs.wisc.edu/application/tags/'+tag, request);
+    await fetch('https://mysqlcs639.cs.wisc.edu/application/tags/' + tag, request);
   }
 
-  async function deleteTag(){
+  async function deleteTag() {
     tag = agent.parameters.Tags;
-    agent.add("deleting "+tag+" filter");
+    agent.add("deleting " + tag + " filter");
+    await postUserMessages(agent.query);
+    await postBotMessages("deleting " + tag + " filter");
     deleteTagFunction();
   }
 
-  async function filterBy(){
-    cat = agent.context.get('Categories') || {parameters:{}};
+  async function filterBy() {
+    cat = agent.context.get('Categories') || { parameters: {} };
     tag = agent.parameters.Tags;
-    agent.add("filtering product by "+tag);
-    agent.context.set({'name':'Tags',
-                       'lifespan':2,
-                       'parameters':tag})
-    console.log("filtering product by "+tag);
+    agent.add("filtering product by " + tag);
+    await postUserMessages(agent.query);
+    await postBotMessages("filtering product by " + tag);
+    agent.context.set({
+      'name': 'Tags',
+      'lifespan': 2,
+      'parameters': tag
+    })
+    console.log("filtering product by " + tag);
     let request = {
       method: 'POST',
       headers: {
@@ -267,20 +237,24 @@ async function login() {
       },
       redirect: 'follow'
     }
-    await fetch('https://mysqlcs639.cs.wisc.edu/application/tags/'+tag, request);
+    await fetch('https://mysqlcs639.cs.wisc.edu/application/tags/' + tag, request);
   }
 
   //navigate to a category page
   async function navPages() {
     cat = agent.parameters.Categories;
-    console.log("nav "+cat+" page");
-    console.log("/"+username+"/"+cat+token)
+    console.log("nav " + cat + " page");
+    console.log("/" + username + "/" + cat + token)
     //Navigating to new page...
-    agent.add("Navigating to the "+cat+" page");
-    agent.context.set({'name':'Categories',
-                       'lifespan':5,
-                       'parameters':cat})
-    let body = JSON.stringify({page: "/"+username+"/"+cat, dialogflowUpdated: true, back: false});
+    agent.add("Navigating to the " + cat + " page");
+    await postUserMessages(agent.query);
+    await postBotMessages("Navigating to the " + cat + " page");
+    agent.context.set({
+      'name': 'Categories',
+      'lifespan': 5,
+      'parameters': cat
+    })
+    let body = JSON.stringify({ page: "/" + username + "/" + cat, dialogflowUpdated: true, back: false });
     let request = {
       method: 'PUT',
       headers: {
@@ -300,8 +274,9 @@ async function login() {
     console.log(username);
     console.log(token);
     agent.add('Navigating to the home page');
-    agent.clearContext;
-    let body = JSON.stringify({page: "/"+username, dialogflowUpdated: true, back: false});
+    await postUserMessages(agent.query);
+    await postBotMessages("Navigating to the home page");
+    let body = JSON.stringify({ page: "/" + username, dialogflowUpdated: true, back: false });
     let request = {
       method: 'PUT',
       headers: {
@@ -319,7 +294,9 @@ async function login() {
   async function back() {
     console.log("back");
     agent.add('Navigating back a page');
-    let body = JSON.stringify({page: "", dialogflowUpdated: true, back: true});
+    await postUserMessages(agent.query);
+    await postBotMessages('Navigating back a page');
+    let body = JSON.stringify({ page: "", dialogflowUpdated: true, back: true });
     let request = {
       method: 'PUT',
       headers: {
@@ -333,21 +310,24 @@ async function login() {
     await fetch('https://mysqlcs639.cs.wisc.edu/application', request);
   }
 
-  //logout the user
-  async function logout() {
-    console.log("logout");
-    //Logging you out.
-    let request = {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-access-token': token
-      },
-      redirect: 'follow'
-    }
-    await fetch('https://mysqlcs639.cs.wisc.edu/application/products', request);
+  // //logout the user
+  // async function logout() {
+  //   console.log("logout");
+  //   agent.add('Goodbye!');
+  //   await postUserMessages(agent.query);
+  //   await postBotMessages('Goodbye!');
+  //   //Logging you out.
+  //   let request = {
+  //     method: 'DELETE',
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //       'x-access-token': token
+  //     },
+  //     redirect: 'follow'
+  //   }
+  //   await fetch('https://mysqlcs639.cs.wisc.edu/application/products', request);
 
-  }
+  // }
 
   //list out tag/filter options
   async function tags() {
@@ -356,18 +336,22 @@ async function login() {
     category = agent.parameters.categories();
     options = await fetchTags(category);
     agent.add('Your tag options are as follows:');
+    await postUserMessages(agent.query);
+    await postBotMessages('Your tag options are as follows:');
     console.log(options);
-    for (i of options){
+    for (i of options) {
       agent.add(i);
+      await postBotMessages(i);
     }
   }
 
   //list out items in the cart and the cart total $$$
   async function reviewCart() {
     console.log("review cart");
-    agent.consoleMessages();
-    agent.add("Here's a review of your cart" );
-    let body = JSON.stringify({page: "/"+username+"/cart-review", dialogflowUpdated: true, back: false});
+    agent.add("Here's a review of your cart");
+    await postUserMessages(agent.query);
+    await postBotMessages("Here's a review of your cart");
+    let body = JSON.stringify({ page: "/" + username + "/cart-review", dialogflowUpdated: true, back: false });
     let request = {
       method: 'PUT',
       headers: {
@@ -384,6 +368,9 @@ async function login() {
   //get reviews for a product if it has any
   async function prodRev() {
     console.log("product reviews");
+    agent.add("Here's a review of the product");
+    await postUserMessages(agent.query);
+    await postBotMessages("Here's a review of the product");
     //Here are the reviews:
     ///products/<product_id>/reviews
 
@@ -392,6 +379,9 @@ async function login() {
   //get ratings for a product if it has any
   async function prodRate() {
     console.log("product");
+    agent.add("Here's the rating of the product");
+    await postUserMessages(agent.query);
+    await postBotMessages("Here's the rating of the product");
     //Here is the user rating:
 
   }
@@ -401,8 +391,9 @@ async function login() {
     console.log("cart contents");
     //ask for product details like quantity
     agent.add('Here are the items in your cart');
+    await postUserMessages(agent.query);
+    await postBotMessages('Here are the items in your cart');
     //TODO get product id
-
     let request = {
       method: 'GET',
       headers: {
@@ -420,7 +411,9 @@ async function login() {
     //cart confirm
     console.log("cart confirm");
     agent.add('Cart Ordered');
-    let body = JSON.stringify({page: "/"+username+"/cart-confirmed", dialogflowUpdated: true, back: false});
+    await postUserMessages(agent.query);
+    await postBotMessages('Cart Order Confirmed');
+    let body = JSON.stringify({ page: "/" + username + "/cart-confirmed", dialogflowUpdated: true, back: false });
     let request = {
       method: 'PUT',
       headers: {
@@ -437,11 +430,12 @@ async function login() {
   async function cartDelete() {
     console.log("cart delete");
     //Deleting the item from your cart
-    console.log("Navigating to product");
-    agent.add('Navigating to the product');
-    cat = agent.parameters.Categories;
+    console.log("delete item from cart");
+    agent.add('Deleting item');
+    await postUserMessages(agent.query);
+    await postBotMessages('Deleting item');
     //TODO get product id
-    let body = JSON.stringify({page: "/"+products+"/"+prodID, dialogflowUpdated: true, back: false});
+    let body = JSON.stringify({ page: "/" + products + "/" + agent.query, dialogflowUpdated: true, back: false });
     let request = {
       method: 'DELETE',
       headers: {
@@ -454,14 +448,33 @@ async function login() {
     await fetch('https://mysqlcs639.cs.wisc.edu/application', request);
   }
 
+  async function clearCart() {
+    console.log("cart delete");
+    //Deleting the item from your cart
+    console.log("clear all products");
+    agent.add('Clearing the cart');
+    await postUserMessages(agent.query);
+    await postBotMessages('Clearing the cart');
+    let request = {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-access-token': token
+      },
+      redirect: 'follow'
+    }
+    await fetch('https://mysqlcs639.cs.wisc.edu/application/products', request);
+  }
+
   //add item to the cart
   async function cartAdd() {
     console.log("cart add");
     //ask for product details like quantity
     agent.add('Adding the product to the cart');
-    cat = agent.parameters.Categories;
+    await postUserMessages(agent.query);
+    await postBotMessages('Adding the product to the cart');
     //TODO get product id
-    let body = JSON.stringify({page: "/"+products+"/"+prodID, dialogflowUpdated: true, back: false});
+    let body = JSON.stringify({ page: "/" + products + "/" + agent.query, dialogflowUpdated: true, back: false });
     let request = {
       method: 'POST',
       headers: {
@@ -479,11 +492,13 @@ async function login() {
     console.log("get categories");
     console.log(token);
     agent.add("Your category options are as follows:");
-    
+    await postUserMessages(agent.query);
+    await postBotMessages("Your category options are as follows:");
     options = await fetchCategories();
     console.log(options);
-    for (i of options){
+    for (i of options) {
       agent.add(i);
+      await postBotMessages(i);
     }
 
   }
@@ -495,14 +510,13 @@ async function login() {
     username = agent.parameters.username;
     // You need to set this from password entity that you declare in DialogFlow
     password = agent.parameters.password;
-
+    await postUserMessages(agent.query);
     //get and set token with login info
     await getToken()
     console.log(token);
     agent.add(token);
     agent.add("you are logged on!");
-
-    //Logging you on!
+    await postBotMessages("You are logged on!");
   }
 
 
@@ -512,7 +526,6 @@ async function login() {
   intentMap.set('Login', login)
   intentMap.set('Back', back)
   intentMap.set('Navigate Cart', navCart)
-  intentMap.set('Logout', logout)
   intentMap.set('Tags', tags)
   intentMap.set('Review Cart', reviewCart)
   intentMap.set('Product Reviews', prodRev)
@@ -527,8 +540,8 @@ async function login() {
   intentMap.set('Categories', categories)
   intentMap.set('Filter Tags', filterBy)
   intentMap.set('Remove Tag', deleteTag)
-  // intentMap.set('Username', username)
-  // intentMap.set('Password', password)
+  intentMap.set('clear cart', clearCart)
+  intentMap.set('Clear Messages', clearMessages)
 
   agent.handleRequest(intentMap)
 })
