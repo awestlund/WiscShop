@@ -310,25 +310,6 @@ app.post('/', express.json(), (req, res) => {
     await fetch('https://mysqlcs639.cs.wisc.edu/application', request);
   }
 
-  // //logout the user
-  // async function logout() {
-  //   console.log("logout");
-  //   agent.add('Goodbye!');
-  //   await postUserMessages(agent.query);
-  //   await postBotMessages('Goodbye!');
-  //   //Logging you out.
-  //   let request = {
-  //     method: 'DELETE',
-  //     headers: {
-  //       'Content-Type': 'application/json',
-  //       'x-access-token': token
-  //     },
-  //     redirect: 'follow'
-  //   }
-  //   await fetch('https://mysqlcs639.cs.wisc.edu/application/products', request);
-
-  // }
-
   //list out tag/filter options
   async function tags() {
     console.log("tags");
